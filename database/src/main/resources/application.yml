@@ -1,0 +1,38 @@
+quarkus:
+  application:
+    name: taxi-data-processor
+  
+  # Micrometer Metrics Configuration
+  micrometer:
+    export:
+      prometheus:
+        enabled: true
+        path: /metrics
+    metrics:
+      enabled: true
+
+taxis:
+  processing:
+    # Input directory to monitor for parquet files
+    input-directory: "./data/input"
+    
+    # Output directory for successfully processed files
+    output-directory: "./data/output"
+    
+    # Error directory for files that couldn't be processed
+    error-directory: "./data/error"
+    
+    # Time period in milliseconds to monitor the input directory
+    monitor-period-ms: 5000
+    
+  database:
+    host: localhost
+    port: 5432
+    database: taxidb
+    username: postgres
+    password: postgres
+    use-tls: false
+    cert-path: ""
+    schema-type: GREEN
+    create-table-if-not-exists: true
+

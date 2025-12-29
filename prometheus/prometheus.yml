@@ -1,0 +1,49 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'taxi-monitor'
+
+# Remote write to VictoriaMetrics
+remote_write:
+  - url: http://victoriametrics:8428/api/v1/write
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PostgreSQL exporter (if you add it later)
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Kafka exporter (if you add it later)
+  # - job_name: 'kafka'
+  #   static_configs:
+  #     - targets: ['kafka-exporter:9308']
+
+  # OpenSearch exporter (if you add it later)
+  # - job_name: 'opensearch'
+  #   static_configs:
+  #     - targets: ['opensearch-exporter:9114']
+  
+  # Taxi Data Processor (Database Application)
+  - job_name: 'taxi-data-processor'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'taxi-data-processor'
+          module: 'database'
+  
+  # Taxi Data Indexer (Indexing Application)
+  - job_name: 'taxi-data-indexer'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          application: 'taxi-data-indexer'
+          module: 'indexing'
+

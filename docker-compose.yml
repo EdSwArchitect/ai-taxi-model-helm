@@ -1,0 +1,272 @@
+version: '3.8'
+
+# TLS Configuration - Set TLS_ENABLED=true in .env file to enable TLS
+# Default: TLS disabled (HTTP only)
+# Use docker-compose.tls.yml override file for TLS configuration
+
+services:
+  # PostgreSQL Database with PostGIS
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: taxidb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql:ro
+    networks:
+      - taxi-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # OpenSearch
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - taxi-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # OpenSearch Dashboards
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    container_name: opensearch-dashboards
+    ports:
+      - "5601:5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=admin
+    volumes:
+      - opensearch-dashboards_data:/usr/share/opensearch-dashboards/data
+    networks:
+      - taxi-network
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Kafka with KRaft
+  kafka:
+    image: apache/kafka:3.6.1
+    container_name: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+    networks:
+      - taxi-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # etcd
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.10
+    container_name: etcd
+    environment:
+      - ETCD_NAME=etcd
+      - ETCD_DATA_DIR=/etcd-data
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
+      - ETCD_INITIAL_CLUSTER=etcd=http://etcd:2380
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster-1
+      - ETCD_INITIAL_CLUSTER_STATE=new
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - etcd_data:/etcd-data
+    networks:
+      - taxi-network
+    healthcheck:
+      test: ["CMD-SHELL", "etcdctl endpoint health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # VictoriaMetrics - Time Series Database
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.100.0
+    container_name: victoriametrics
+    command:
+      - '--storageDataPath=/victoria-metrics-data'
+      - '--httpListenAddr=:8428'
+      - '--retentionPeriod=12'
+    ports:
+      - "8428:8428"
+    volumes:
+      - victoriametrics_data:/victoria-metrics-data
+    networks:
+      - taxi-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8428/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Prometheus (scrapes metrics and writes to VictoriaMetrics)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    environment:
+      - TLS_ENABLED=${TLS_ENABLED:-false}
+      - CERT_DIR=${CERT_DIR:-./certs}
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=2h'
+      - '--web.enable-lifecycle'
+      - ${PROMETHEUS_TLS_ARGS:---web.listen-address=0.0.0.0:9090}
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+      - "${PROMETHEUS_TLS_PORT:-9091}:9091"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/web.yml:/etc/prometheus/web.yml:ro
+      - prometheus_data:/prometheus
+      - ${CERT_DIR:-./certs}:/etc/prometheus/certs:ro
+    networks:
+      - taxi-network
+    depends_on:
+      victoriametrics:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    environment:
+      - TLS_ENABLED=${TLS_ENABLED:-false}
+      - CERT_DIR=${CERT_DIR:-./certs}
+      - KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD:-changeit}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_PROTOCOL=${GF_SERVER_PROTOCOL:-http}
+      - GF_SERVER_CERT_FILE=${GF_SERVER_CERT_FILE:-/etc/grafana/certs/localhost.crt}
+      - GF_SERVER_CERT_KEY=${GF_SERVER_CERT_KEY:-/etc/grafana/certs/localhost.key}
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+      - "${GRAFANA_TLS_PORT:-3443}:3443"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ${CERT_DIR:-./certs}:/etc/grafana/certs:ro
+    networks:
+      - taxi-network
+    depends_on:
+      - victoriametrics
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # GeoServer
+  geoserver:
+    image: oscarfonts/geoserver:2.23.4
+    container_name: geoserver
+    environment:
+      - TLS_ENABLED=${TLS_ENABLED:-false}
+      - CERT_DIR=${CERT_DIR:-./certs}
+      - KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD:-changeit}
+      - GEOSERVER_DATA_DIR=/var/local/geoserver
+      - ENABLE_JSONP=true
+      - MAX_FILTER_RULES=20
+      - OPTIMIZE_LINE_WIDTH=false
+      - GEOSERVER_ADMIN_USER=admin
+      - GEOSERVER_ADMIN_PASSWORD=geoserver
+      - JAVA_OPTS=${GEOSERVER_JAVA_OPTS:--Xms512m -Xmx2048m}
+    ports:
+      - "${GEOSERVER_PORT:-8080}:8080"
+      - "${GEOSERVER_TLS_PORT:-8443}:8443"
+    volumes:
+      - geoserver_data:/var/local/geoserver
+      - ${CERT_DIR:-./certs}:/etc/geoserver/certs:ro
+    networks:
+      - taxi-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/geoserver/web || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  taxi-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  opensearch_data:
+  opensearch-dashboards_data:
+  kafka_data:
+  etcd_data:
+  victoriametrics_data:
+  prometheus_data:
+  grafana_data:
+  geoserver_data:
+

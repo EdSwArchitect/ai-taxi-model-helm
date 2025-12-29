@@ -1,0 +1,43 @@
+# TLS Override Configuration
+# Use this file with: docker-compose -f docker-compose.yml -f docker-compose.tls.yml up
+# Or set TLS_ENABLED=true in .env file
+
+version: '3.8'
+
+services:
+  # Prometheus with TLS
+  prometheus:
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.listen-address=0.0.0.0:9090'
+      - '--web.config.file=/etc/prometheus/web.yml'
+    ports:
+      - "9090:9090"  # HTTP (redirects to HTTPS)
+      - "9091:9091"  # HTTPS
+
+  # Grafana with TLS
+  grafana:
+    environment:
+      - GF_SERVER_PROTOCOL=https
+      - GF_SERVER_CERT_FILE=/etc/grafana/certs/localhost.crt
+      - GF_SERVER_CERT_KEY=/etc/grafana/certs/localhost.key
+      - GF_SERVER_HTTP_PORT=3000
+      - GF_SERVER_HTTPS_PORT=3443
+    ports:
+      - "3000:3000"  # HTTP (redirects to HTTPS)
+      - "3443:3443"   # HTTPS
+
+  # GeoServer with TLS
+  geoserver:
+    environment:
+      - GEOSERVER_CSRF_DISABLED=false
+      - JAVA_OPTS=-Xms512m -Xmx2048m -Djavax.net.ssl.keyStore=/etc/geoserver/certs/localhost.jks -Djavax.net.ssl.keyStorePassword=${KEYSTORE_PASSWORD:-changeit} -Djavax.net.ssl.trustStore=/etc/geoserver/certs/localhost-truststore.jks -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PASSWORD:-changeit}
+    ports:
+      - "8080:8080"  # HTTP
+      - "8443:8443"  # HTTPS
+
