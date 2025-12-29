@@ -435,12 +435,12 @@ The project includes a complete Docker Compose setup with the following services
 - **PostgreSQL 16 with PostGIS 3.4** - Spatial database (port 5432)
 - **OpenSearch 2.11.0** - Search engine (ports 9200, 9600)
 - **OpenSearch Dashboards 2.11.0** - Search UI (port 5601)
-- **Kafka 3.6.1** - Message broker with KRaft (ports 9092, 9094)
+- **Kafka (Apache)** - Message broker with KRaft (ports 9092, 9094)
 - **etcd 3.5.10** - Distributed key-value store (ports 2379, 2380)
 - **VictoriaMetrics v1.100.0** - Time series database (port 8428)
 - **Prometheus 2.48.0** - Metrics collection (HTTP: 9090, HTTPS: 9091)
 - **Grafana 10.2.2** - Visualization (HTTP: 3000, HTTPS: 3443)
-- **GeoServer 2.23.4** - Geospatial server (HTTP: 8080, HTTPS: 8443)
+- **GeoServer (kartoza)** - Geospatial server (HTTP: 8080, HTTPS: 8443)
 
 ### Quick Start
 

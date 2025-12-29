@@ -8,6 +8,7 @@ services:
   # PostgreSQL Database with PostGIS
   postgres:
     image: postgis/postgis:16-3.4
+    platform: linux/amd64
     container_name: postgres
     environment:
       POSTGRES_USER: postgres
@@ -31,6 +32,7 @@ services:
   # OpenSearch
   opensearch:
     image: opensearchproject/opensearch:2.11.0
+    platform: linux/amd64
     container_name: opensearch
     environment:
       - discovery.type=single-node
@@ -61,6 +63,7 @@ services:
   # OpenSearch Dashboards
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.11.0
+    platform: linux/amd64
     container_name: opensearch-dashboards
     ports:
       - "5601:5601"
@@ -79,7 +82,8 @@ services:
 
   # Kafka with KRaft
   kafka:
-    image: apache/kafka:3.6.1
+    image: apache/kafka:latest
+    platform: linux/amd64
     container_name: kafka
     environment:
       KAFKA_NODE_ID: 1
@@ -111,6 +115,7 @@ services:
   # etcd
   etcd:
     image: quay.io/coreos/etcd:v3.5.10
+    platform: linux/amd64
     container_name: etcd
     environment:
       - ETCD_NAME=etcd
@@ -227,7 +232,8 @@ services:
 
   # GeoServer
   geoserver:
-    image: oscarfonts/geoserver:2.23.4
+    image: kartoza/geoserver:latest
+    platform: linux/amd64
     container_name: geoserver
     environment:
       - TLS_ENABLED=${TLS_ENABLED:-false}
