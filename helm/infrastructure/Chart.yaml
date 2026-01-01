@@ -1,0 +1,36 @@
+apiVersion: v2
+name: taxi-infrastructure
+description: A Helm chart for the taxi data infrastructure services (without applications)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: postgres
+    version: 1.0.0
+    repository: "file://../postgres"
+  - name: opensearch
+    version: 1.0.0
+    repository: "file://../opensearch"
+  - name: opensearch-dashboards
+    version: 1.0.0
+    repository: "file://../opensearch-dashboards"
+  - name: kafka
+    version: 1.0.0
+    repository: "file://../kafka"
+  - name: etcd
+    version: 1.0.0
+    repository: "file://../etcd"
+  - name: victoriametrics
+    version: 1.0.0
+    repository: "file://../victoriametrics"
+  - name: prometheus
+    version: 1.0.0
+    repository: "file://../prometheus"
+  - name: grafana
+    version: 1.0.0
+    repository: "file://../grafana"
+  - name: geoserver
+    version: 1.0.0
+    repository: "file://../geoserver"
+

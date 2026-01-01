@@ -1,0 +1,6 @@
+apiVersion: v2
+name: geoserver
+description: A Helm chart for GeoServer with TLS support
+type: application
+version: 1.0.0
+appVersion: "latest"

@@ -1,0 +1,72 @@
+# Global configuration
+global:
+  tls:
+    enabled: false
+    certDir: "./certs"
+    keystorePassword: "changeit"
+
+# Application Services
+database:
+  enabled: true
+  # See ../database/values.yaml for full configuration
+  # Override values here, e.g.:
+  # replicaCount: 1
+  # config:
+  #   database:
+  #     host: postgres
+
+indexing:
+  enabled: true
+  # See ../indexing/values.yaml for full configuration
+  # Override values here, e.g.:
+  # replicaCount: 1
+  # config:
+  #   opensearch:
+  #     host: opensearch
+
+# Infrastructure Services
+postgres:
+  enabled: true
+  # See ../postgres/values.yaml for full configuration
+
+opensearch:
+  enabled: true
+  # See ../opensearch/values.yaml for full configuration
+
+opensearch-dashboards:
+  enabled: true
+  # See ../opensearch-dashboards/values.yaml for full configuration
+
+kafka:
+  enabled: true
+  # See ../kafka/values.yaml for full configuration
+
+etcd:
+  enabled: true
+  # See ../etcd/values.yaml for full configuration
+
+victoriametrics:
+  enabled: true
+  # See ../victoriametrics/values.yaml for full configuration
+
+prometheus:
+  enabled: true
+  # See ../prometheus/values.yaml for full configuration
+  # TLS can be enabled via global.tls.enabled or:
+  # tls:
+  #   enabled: true
+
+grafana:
+  enabled: true
+  # See ../grafana/values.yaml for full configuration
+  # TLS can be enabled via global.tls.enabled or:
+  # tls:
+  #   enabled: true
+
+geoserver:
+  enabled: true
+  # See ../geoserver/values.yaml for full configuration
+  # TLS can be enabled via global.tls.enabled or:
+  # tls:
+  #   enabled: true
+

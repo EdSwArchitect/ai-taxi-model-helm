@@ -1,0 +1,7 @@
+apiVersion: v2
+name: grafana
+description: A Helm chart for Grafana with TLS support
+type: application
+version: 1.0.0
+appVersion: "10.2.2"
+

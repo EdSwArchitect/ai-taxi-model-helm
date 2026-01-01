@@ -1,0 +1,6 @@
+apiVersion: v2
+name: etcd
+description: A Helm chart for etcd
+type: application
+version: 1.0.0
+appVersion: "v3.5.10"

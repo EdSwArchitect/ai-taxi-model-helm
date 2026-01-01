@@ -1,0 +1,93 @@
+replicaCount: 1
+
+image:
+  repository: opensearchproject/opensearch
+  tag: "2.11.0"
+  pullPolicy: IfNotPresent
+  platform: linux/amd64
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  capabilities:
+    add:
+      - IPC_LOCK
+      - SYS_RESOURCE
+
+service:
+  type: ClusterIP
+  ports:
+    http: 9200
+    transport: 9600
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: opensearch.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# OpenSearch configuration
+opensearch:
+  discoveryType: single-node
+  adminPassword: admin
+  javaOpts: "-Xms512m -Xmx512m"
+  bootstrapMemoryLock: true
+
+# Persistent volume configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 20Gi
+
+# Health check configuration
+healthcheck:
+  enabled: true
+  interval: 30s
+  timeout: 10s
+  retries: 5
+
+# Ulimits configuration
+ulimits:
+  memlock:
+    soft: -1
+    hard: -1
+  nofile:
+    soft: 65536
+    hard: 65536
+

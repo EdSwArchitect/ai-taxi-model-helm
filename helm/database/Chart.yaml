@@ -1,0 +1,7 @@
+apiVersion: v2
+name: taxi-data-processor
+description: A Helm chart for the Taxi Data Processor (Database) Quarkus application
+type: application
+version: 1.0.0
+appVersion: "1.0.0-SNAPSHOT"
+

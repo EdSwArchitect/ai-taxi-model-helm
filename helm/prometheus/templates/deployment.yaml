@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus.fullname" . }}
+  labels:
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "prometheus.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.ports.http }}
+              protocol: TCP
+            {{- if .Values.tls.enabled }}
+            - name: https
+              containerPort: {{ .Values.service.ports.https }}
+              protocol: TCP
+            {{- end }}
+          args:
+            - '--config.file={{ .Values.prometheus.configPath }}'
+            - '--storage.tsdb.path={{ .Values.prometheus.storagePath }}'
+            - '--storage.tsdb.retention.time={{ .Values.prometheus.retentionTime }}'
+            - '--web.enable-lifecycle'
+            {{- if .Values.tls.enabled }}
+            - '--web.config.file={{ .Values.prometheus.webConfigPath }}'
+            {{- else }}
+            - '--web.listen-address=0.0.0.0:{{ .Values.service.ports.http }}'
+            {{- end }}
+          env:
+            - name: TLS_ENABLED
+              value: {{ .Values.tls.enabled | quote }}
+            - name: CERT_DIR
+              value: {{ .Values.tls.certDir | quote }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: prometheus-data
+              mountPath: {{ .Values.prometheus.storagePath }}
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+            {{- if .Values.tls.enabled }}
+            - name: prometheus-certs
+              mountPath: {{ .Values.tls.certDir }}
+              readOnly: true
+            {{- end }}
+          {{- end }}
+          {{- if .Values.healthcheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: {{ .Values.healthcheck.interval | replace "s" "" | int }}
+            timeoutSeconds: {{ .Values.healthcheck.timeout | replace "s" "" | int }}
+            failureThreshold: {{ .Values.healthcheck.retries }}
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: {{ .Values.healthcheck.interval | replace "s" "" | int }}
+            timeoutSeconds: {{ .Values.healthcheck.timeout | replace "s" "" | int }}
+            failureThreshold: {{ .Values.healthcheck.retries }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: prometheus-data
+          {{- if .Values.persistence.storageClass }}
+          persistentVolumeClaim:
+            claimName: {{ include "prometheus.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: prometheus-config
+          configMap:
+            name: {{ include "prometheus.fullname" . }}-config
+        {{- if .Values.tls.enabled }}
+        - name: prometheus-certs
+          secret:
+            secretName: {{ include "prometheus.fullname" . }}-tls
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+

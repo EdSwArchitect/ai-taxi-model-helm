@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taxi-data-indexer.fullname" . }}
+  labels:
+    {{- include "taxi-data-indexer.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "taxi-data-indexer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "taxi-data-indexer.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taxi-data-indexer.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: QUARKUS_APPLICATION_NAME
+              value: {{ .Values.quarkus.application.name | quote }}
+            - name: TAXIS_PROCESSING_INPUT_DIRECTORY
+              value: {{ .Values.config.processing.inputDirectory | quote }}
+            - name: TAXIS_PROCESSING_OUTPUT_DIRECTORY
+              value: {{ .Values.config.processing.outputDirectory | quote }}
+            - name: TAXIS_PROCESSING_ERROR_DIRECTORY
+              value: {{ .Values.config.processing.errorDirectory | quote }}
+            - name: TAXIS_PROCESSING_MONITOR_PERIOD_MS
+              value: {{ .Values.config.processing.monitorPeriodMs | quote }}
+            - name: TAXIS_INDEXING_RATE_LIMIT_PER_SECOND
+              value: {{ .Values.config.indexing.rateLimitPerSecond | quote }}
+            - name: TAXIS_INDEXING_BATCH_SIZE
+              value: {{ .Values.config.indexing.batchSize | quote }}
+            - name: TAXIS_OPENSEARCH_HOST
+              value: {{ .Values.config.opensearch.host | quote }}
+            - name: TAXIS_OPENSEARCH_PORT
+              value: {{ .Values.config.opensearch.port | quote }}
+            - name: TAXIS_OPENSEARCH_USERNAME
+              value: {{ .Values.config.opensearch.username | quote }}
+            - name: TAXIS_OPENSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "taxi-data-indexer.fullname" . }}-secrets
+                  key: opensearch-password
+            - name: TAXIS_OPENSEARCH_USE_TLS
+              value: {{ .Values.config.opensearch.useTls | quote }}
+            - name: TAXIS_OPENSEARCH_CERT_PATH
+              value: {{ .Values.config.opensearch.certPath | quote }}
+            - name: QUARKUS_MICROMETER_EXPORT_PROMETHEUS_ENABLED
+              value: {{ .Values.quarkus.micrometer.export.prometheus.enabled | quote }}
+            - name: QUARKUS_MICROMETER_EXPORT_PROMETHEUS_PATH
+              value: {{ .Values.quarkus.micrometer.export.prometheus.path | quote }}
+            - name: QUARKUS_MICROMETER_METRICS_ENABLED
+              value: {{ .Values.quarkus.micrometer.metrics.enabled | quote }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: input-data
+              mountPath: {{ .Values.config.processing.inputDirectory }}
+            - name: output-data
+              mountPath: {{ .Values.config.processing.outputDirectory }}
+            - name: error-data
+              mountPath: {{ .Values.config.processing.errorDirectory }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: input-data
+          {{- if .Values.persistence.storageClass }}
+          persistentVolumeClaim:
+            claimName: {{ include "taxi-data-indexer.fullname" . }}-input
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: output-data
+          {{- if .Values.persistence.storageClass }}
+          persistentVolumeClaim:
+            claimName: {{ include "taxi-data-indexer.fullname" . }}-output
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: error-data
+          {{- if .Values.persistence.storageClass }}
+          persistentVolumeClaim:
+            claimName: {{ include "taxi-data-indexer.fullname" . }}-error
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+

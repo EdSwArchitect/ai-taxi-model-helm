@@ -1,0 +1,52 @@
+# Global configuration
+global:
+  tls:
+    enabled: false
+    certDir: "./certs"
+    keystorePassword: "changeit"
+
+# PostgreSQL configuration
+postgres:
+  enabled: true
+  # See ../postgres/values.yaml for full configuration
+
+# OpenSearch configuration
+opensearch:
+  enabled: true
+  # See ../opensearch/values.yaml for full configuration
+
+# OpenSearch Dashboards configuration
+opensearch-dashboards:
+  enabled: true
+  # See ../opensearch-dashboards/values.yaml for full configuration
+
+# Kafka configuration
+kafka:
+  enabled: true
+  # See ../kafka/values.yaml for full configuration
+
+# etcd configuration
+etcd:
+  enabled: true
+  # See ../etcd/values.yaml for full configuration
+
+# VictoriaMetrics configuration
+victoriametrics:
+  enabled: true
+  # See ../victoriametrics/values.yaml for full configuration
+
+# Prometheus configuration
+prometheus:
+  enabled: true
+  # See ../prometheus/values.yaml for full configuration
+
+# Grafana configuration
+grafana:
+  enabled: true
+  # See ../grafana/values.yaml for full configuration
+
+# GeoServer configuration
+geoserver:
+  enabled: true
+  # See ../geoserver/values.yaml for full configuration
+

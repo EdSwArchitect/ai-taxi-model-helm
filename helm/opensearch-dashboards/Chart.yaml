@@ -1,0 +1,6 @@
+apiVersion: v2
+name: opensearch-dashboards
+description: A Helm chart for OpenSearch Dashboards
+type: application
+version: 1.0.0
+appVersion: "2.11.0"

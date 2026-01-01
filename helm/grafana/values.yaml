@@ -1,0 +1,97 @@
+replicaCount: 1
+
+image:
+  repository: grafana/grafana
+  tag: "10.2.2"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  ports:
+    http: 3000
+    https: 3443
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: grafana.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# TLS Configuration
+tls:
+  enabled: false
+  certDir: "/etc/grafana/certs"
+  certFile: "localhost.crt"
+  keyFile: "localhost.key"
+  keystorePassword: "changeit"
+
+# Grafana configuration
+grafana:
+  adminUser: admin
+  adminPassword: admin
+  allowSignUp: false
+  protocol: http  # http or https
+  provisioningPath: "/etc/grafana/provisioning"
+
+# Persistent volume configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# Health check configuration
+healthcheck:
+  enabled: true
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+# Dependencies
+dependencies:
+  victoriametrics:
+    service: victoriametrics
+    port: 8428
+  prometheus:
+    service: prometheus
+    port: 9090
+

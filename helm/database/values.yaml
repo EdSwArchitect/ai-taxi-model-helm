@@ -1,0 +1,132 @@
+# Default values for taxi-data-processor
+replicaCount: 1
+
+image:
+  repository: taxi-data-processor
+  pullPolicy: IfNotPresent
+  tag: "1.0.0-SNAPSHOT"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8080
+  metricsPort: 8080
+  metricsPath: /metrics
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: taxi-data-processor.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Persistent volumes for data directories
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  inputDirectory: /data/input
+  outputDirectory: /data/output
+  errorDirectory: /data/error
+
+# Application configuration
+config:
+  processing:
+    inputDirectory: "/data/input"
+    outputDirectory: "/data/output"
+    errorDirectory: "/data/error"
+    monitorPeriodMs: 5000
+  
+  database:
+    host: postgres
+    port: 5432
+    database: taxidb
+    username: postgres
+    useTls: false
+    certPath: ""
+    schemaType: GREEN
+    createTableIfNotExists: true
+
+# Secrets (should be provided via external secret management)
+secrets:
+  database:
+    password: "postgres"
+
+# Quarkus configuration
+quarkus:
+  application:
+    name: taxi-data-processor
+  micrometer:
+    export:
+      prometheus:
+        enabled: true
+        path: /metrics
+    metrics:
+      enabled: true
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /q/health/live
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /q/health/ready
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+

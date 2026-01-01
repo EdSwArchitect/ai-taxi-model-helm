@@ -1,0 +1,95 @@
+replicaCount: 1
+
+image:
+  repository: prom/prometheus
+  tag: "v2.48.0"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  ports:
+    http: 9090
+    https: 9091
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: prometheus.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# TLS Configuration
+tls:
+  enabled: false
+  certDir: "/etc/prometheus/certs"
+  certFile: "localhost.crt"
+  keyFile: "localhost.key"
+
+# Prometheus configuration
+prometheus:
+  retentionTime: "2h"
+  storagePath: "/prometheus"
+  configPath: "/etc/prometheus/prometheus.yml"
+  webConfigPath: "/etc/prometheus/web.yml"
+  remoteWrite:
+    enabled: true
+    url: "http://victoriametrics:8428/api/v1/write"
+
+# Persistent volume configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# Health check configuration
+healthcheck:
+  enabled: true
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+# Dependencies
+dependencies:
+  victoriametrics:
+    service: victoriametrics
+    port: 8428
+

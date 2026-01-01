@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grafana.fullname" . }}
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "grafana.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "grafana.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "grafana.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.ports.http }}
+              protocol: TCP
+            {{- if .Values.tls.enabled }}
+            - name: https
+              containerPort: {{ .Values.service.ports.https }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: TLS_ENABLED
+              value: {{ .Values.tls.enabled | quote }}
+            - name: CERT_DIR
+              value: {{ .Values.tls.certDir | quote }}
+            - name: KEYSTORE_PASSWORD
+              value: {{ .Values.tls.keystorePassword | quote }}
+            - name: GF_SECURITY_ADMIN_USER
+              value: {{ .Values.grafana.adminUser | quote }}
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "grafana.fullname" . }}-secrets
+                  key: admin-password
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: {{ .Values.grafana.allowSignUp | quote }}
+            - name: GF_SERVER_PROTOCOL
+              value: {{ .Values.grafana.protocol | quote }}
+            {{- if .Values.tls.enabled }}
+            - name: GF_SERVER_CERT_FILE
+              value: {{ .Values.tls.certDir }}/{{ .Values.tls.certFile }}
+            - name: GF_SERVER_CERT_KEY
+              value: {{ .Values.tls.certDir }}/{{ .Values.tls.keyFile }}
+            - name: GF_SERVER_HTTP_PORT
+              value: {{ .Values.service.ports.http | quote }}
+            - name: GF_SERVER_HTTPS_PORT
+              value: {{ .Values.service.ports.https | quote }}
+            {{- end }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+            - name: grafana-provisioning
+              mountPath: {{ .Values.grafana.provisioningPath }}
+            {{- if .Values.tls.enabled }}
+            - name: grafana-certs
+              mountPath: {{ .Values.tls.certDir }}
+              readOnly: true
+            {{- end }}
+          {{- end }}
+          {{- if .Values.healthcheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: {{ .Values.healthcheck.interval | replace "s" "" | int }}
+            timeoutSeconds: {{ .Values.healthcheck.timeout | replace "s" "" | int }}
+            failureThreshold: {{ .Values.healthcheck.retries }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: {{ .Values.healthcheck.interval | replace "s" "" | int }}
+            timeoutSeconds: {{ .Values.healthcheck.timeout | replace "s" "" | int }}
+            failureThreshold: {{ .Values.healthcheck.retries }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: grafana-data
+          {{- if .Values.persistence.storageClass }}
+          persistentVolumeClaim:
+            claimName: {{ include "grafana.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: grafana-provisioning
+          configMap:
+            name: {{ include "grafana.fullname" . }}-provisioning
+        {{- if .Values.tls.enabled }}
+        - name: grafana-certs
+          secret:
+            secretName: {{ include "grafana.fullname" . }}-tls
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
