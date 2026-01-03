@@ -4,28 +4,49 @@ import java.time.LocalDateTime;
 
 /**
  * Model class representing yellow taxi trip data from NYC taxi dataset.
- * Based on the schema from yellow_tripdata.parquet file.
+ * Generated from the parquet schema of yellow_tripdata.parquet file.
+ * 
+ * Schema fields (in order):
+ * 1. VendorID (Integer)
+ * 2. tpep_pickup_datetime (LocalDateTime)
+ * 3. tpep_dropoff_datetime (LocalDateTime)
+ * 4. passenger_count (Integer)
+ * 5. trip_distance (Double)
+ * 6. RatecodeID (Integer)
+ * 7. store_and_fwd_flag (String)
+ * 8. PULocationID (Integer)
+ * 9. DOLocationID (Integer)
+ * 10. payment_type (Integer)
+ * 11. fare_amount (Double)
+ * 12. extra (Double)
+ * 13. mta_tax (Double)
+ * 14. tip_amount (Double)
+ * 15. tolls_amount (Double)
+ * 16. improvement_surcharge (Double)
+ * 17. total_amount (Double)
+ * 18. congestion_surcharge (Double)
  */
 public class YellowTripdata {
     
-    private Integer vendorId;
-    private LocalDateTime tpepPickupDatetime;
-    private LocalDateTime tpepDropoffDatetime;
-    private Integer passengerCount;
-    private Double tripDistance;
-    private Integer ratecodeId;
-    private String storeAndFwdFlag;
-    private Integer puLocationId;
-    private Integer doLocationId;
-    private Integer paymentType;
-    private Double fareAmount;
-    private Double extra;
-    private Double mtaTax;
-    private Double tipAmount;
-    private Double tollsAmount;
-    private Double improvementSurcharge;
-    private Double totalAmount;
-    private Double congestionSurcharge;
+    // Fields from parquet schema (in order)
+    private Integer vendorId;              // VendorID
+    private LocalDateTime tpepPickupDatetime;      // tpep_pickup_datetime
+    private LocalDateTime tpepDropoffDatetime;     // tpep_dropoff_datetime
+    private Integer passengerCount;        // passenger_count
+    private Double tripDistance;           // trip_distance
+    private Integer ratecodeId;            // RatecodeID
+    private String storeAndFwdFlag;        // store_and_fwd_flag
+    private Integer puLocationId;          // PULocationID
+    private Integer doLocationId;          // DOLocationID
+    private Integer paymentType;           // payment_type
+    private Double fareAmount;             // fare_amount
+    private Double extra;                  // extra
+    private Double mtaTax;                 // mta_tax
+    private Double tipAmount;              // tip_amount
+    private Double tollsAmount;            // tolls_amount
+    private Double improvementSurcharge;   // improvement_surcharge
+    private Double totalAmount;            // total_amount
+    private Double congestionSurcharge;    // congestion_surcharge
 
     // Getters and Setters
     
@@ -197,4 +218,3 @@ public class YellowTripdata {
                 '}';
     }
 }
-

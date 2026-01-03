@@ -33,6 +33,7 @@ taxis:
     password: postgres
     use-tls: false
     cert-path: ""
+    # schema-type is kept for backward compatibility but both GREEN and YELLOW are now supported
     schema-type: GREEN
     create-table-if-not-exists: true
 

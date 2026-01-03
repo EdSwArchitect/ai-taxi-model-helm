@@ -1,0 +1,15 @@
+# OpenSearch configuration for non-TLS mode
+# This file is mounted into the container to disable security plugin
+
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+
+# Disable security plugin for non-TLS HTTP access
+plugins.security.disabled: true
+
+# Discovery settings
+discovery.type: single-node
+
+# Performance settings
+bootstrap.memory_lock: true
+

@@ -112,18 +112,7 @@ public class FileProcessingService {
                 return;
             }
             
-            // Check if database service schema type matches the file type
-            DatabaseService.SchemaType dbSchemaType = databaseService.getSchemaType();
-            if ((isGreen && dbSchemaType != DatabaseService.SchemaType.GREEN) ||
-                (isYellow && dbSchemaType != DatabaseService.SchemaType.YELLOW)) {
-                LOG.warn("File schema type (" + (isGreen ? "GREEN" : "YELLOW") + 
-                        ") does not match database schema type (" + dbSchemaType + "): " + filePath);
-                metricsService.incrementFilesErrored();
-                moveToErrorDirectory(filePath, "Schema type mismatch");
-                return;
-            }
-            
-            // Parse and store the data
+            // Parse and store the data (both green and yellow schemas are supported)
             if (isGreen) {
                 processGreenTripdata(filePath);
             } else {

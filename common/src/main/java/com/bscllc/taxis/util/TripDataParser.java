@@ -7,11 +7,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.example.data.Group;
 import org.apache.parquet.example.data.simple.SimpleGroup;
+import org.apache.parquet.example.data.simple.convert.GroupRecordConverter;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.io.ColumnIOFactory;
 import org.apache.parquet.io.MessageColumnIO;
 import org.apache.parquet.io.RecordReader;
+import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.RecordMaterializer;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.Type;
@@ -235,7 +237,6 @@ public class TripDataParser {
             PageReadStore pages;
             while ((pages = reader.readNextRowGroup()) != null) {
                 final long rows = pages.getRowCount();
-                // Use GroupRecordMaterializer - create a simple implementation
                 RecordMaterializer<Group> recordMaterializer = createGroupRecordMaterializer(schema);
                 RecordReader<Group> recordReader = columnIO.getRecordReader(pages, recordMaterializer);
                 
@@ -266,7 +267,6 @@ public class TripDataParser {
             PageReadStore pages;
             while ((pages = reader.readNextRowGroup()) != null) {
                 final long rows = pages.getRowCount();
-                // Use GroupRecordMaterializer - create a simple implementation
                 RecordMaterializer<Group> recordMaterializer = createGroupRecordMaterializer(schema);
                 RecordReader<Group> recordReader = columnIO.getRecordReader(pages, recordMaterializer);
                 
@@ -383,10 +383,15 @@ public class TripDataParser {
 
     /**
      * Helper method to check if a schema contains a field with the given name.
+     * Performs case-insensitive comparison to handle variations in field name casing.
      */
     private static boolean hasField(MessageType schema, String fieldName) {
+        if (schema == null || fieldName == null) {
+            return false;
+        }
+        String lowerFieldName = fieldName.toLowerCase();
         for (Type field : schema.getFields()) {
-            if (field.getName().equals(fieldName)) {
+            if (field.getName().toLowerCase().equals(lowerFieldName)) {
                 return true;
             }
         }
@@ -394,19 +399,12 @@ public class TripDataParser {
     }
 
     /**
-     * Creates a RecordMaterializer for Group objects using the example data classes.
-     * Note: This requires the parquet example classes which should be in parquet-column.
+     * Creates a RecordMaterializer for Group objects using GroupRecordConverter.
+     * GroupRecordConverter already extends RecordMaterializer<Group> and has a constructor
+     * that takes MessageType, so we can use it directly.
      */
     private static RecordMaterializer<Group> createGroupRecordMaterializer(MessageType schema) {
-        // Use the GroupRecordMaterializer from parquet example package
-        // This class should be available through parquet-column dependency
-        try {
-            Class<?> materializerClass = Class.forName("org.apache.parquet.example.data.simple.convert.GroupRecordMaterializer");
-            java.lang.reflect.Constructor<?> constructor = materializerClass.getConstructor(MessageType.class);
-            return (RecordMaterializer<Group>) constructor.newInstance(schema);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create GroupRecordMaterializer. Make sure parquet-column includes example classes.", e);
-        }
+        return new GroupRecordConverter(schema);
     }
     
     /**

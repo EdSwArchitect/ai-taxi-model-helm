@@ -51,6 +51,7 @@ services:
       - "9600:9600"
     volumes:
       - opensearch_data:/usr/share/opensearch/data
+      - ./opensearch/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
     networks:
       - taxi-network
     healthcheck:
@@ -141,28 +142,7 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # VictoriaMetrics - Time Series Database
-  victoriametrics:
-    image: victoriametrics/victoria-metrics:v1.100.0
-    container_name: victoriametrics
-    command:
-      - '--storageDataPath=/victoria-metrics-data'
-      - '--httpListenAddr=:8428'
-      - '--retentionPeriod=12'
-    ports:
-      - "8428:8428"
-    volumes:
-      - victoriametrics_data:/victoria-metrics-data
-    networks:
-      - taxi-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8428/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # Prometheus (scrapes metrics and writes to VictoriaMetrics)
+  # Prometheus (scrapes metrics and stores them locally)
   prometheus:
     image: prom/prometheus:v2.48.0
     container_name: prometheus
@@ -174,7 +154,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=2h'
+      - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
       - ${PROMETHEUS_TLS_ARGS:---web.listen-address=0.0.0.0:9090}
     ports:
@@ -185,11 +165,10 @@ services:
       - ./prometheus/web.yml:/etc/prometheus/web.yml:ro
       - prometheus_data:/prometheus
       - ${CERT_DIR:-./certs}:/etc/prometheus/certs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - taxi-network
-    depends_on:
-      victoriametrics:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
       interval: 30s
@@ -221,7 +200,6 @@ services:
     networks:
       - taxi-network
     depends_on:
-      - victoriametrics
       - prometheus
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
@@ -271,7 +249,6 @@ volumes:
   opensearch-dashboards_data:
   kafka_data:
   etcd_data:
-  victoriametrics_data:
   prometheus_data:
   grafana_data:
   geoserver_data:

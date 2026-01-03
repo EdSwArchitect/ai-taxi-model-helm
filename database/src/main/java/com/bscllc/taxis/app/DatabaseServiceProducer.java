@@ -32,7 +32,7 @@ public class DatabaseServiceProducer {
             LOG.info("Creating DatabaseService - Host: " + databaseConfig.host() + 
                     ", Port: " + databaseConfig.port() + 
                     ", Database: " + databaseConfig.database() + 
-                    ", Schema Type: " + databaseConfig.schemaType() +
+                    ", Schema Types: GREEN and YELLOW (both supported)" +
                     ", TLS: " + databaseConfig.useTls());
             
             DatabaseService.Builder builder = DatabaseService.builder()
@@ -44,20 +44,21 @@ public class DatabaseServiceProducer {
                     .schemaType(databaseConfig.schemaTypeEnum())
                     .createTableIfNotExists(databaseConfig.createTableIfNotExists());
             
-            if (databaseConfig.useTls() && databaseConfig.certPath() != null && 
-                !databaseConfig.certPath().isEmpty()) {
-                builder.certPath(databaseConfig.certPath());
+            if (databaseConfig.useTls() && databaseConfig.certPath().isPresent() && 
+                !databaseConfig.certPath().get().isEmpty()) {
+                builder.certPath(databaseConfig.certPath().get());
             }
             
             DatabaseService service = builder.build();
-            LOG.info("DatabaseService created successfully. Table: " + service.getTableName());
+            LOG.info("DatabaseService created successfully. Tables: " + 
+                    service.getGreenTableName() + ", " + service.getYellowTableName());
             
-            // Track table creation if table was actually created
+            // Track table creation if tables were created
             if (service.wasTableCreated()) {
                 metricsService.incrementTablesCreated();
-                LOG.info("Table created: " + service.getTableName());
+                LOG.info("Tables created/verified: " + service.getGreenTableName() + ", " + service.getYellowTableName());
             } else if (databaseConfig.createTableIfNotExists()) {
-                LOG.info("Table already exists: " + service.getTableName());
+                LOG.info("Tables already exist: " + service.getGreenTableName() + ", " + service.getYellowTableName());
             }
             
             return service;

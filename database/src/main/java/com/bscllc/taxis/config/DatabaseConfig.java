@@ -4,6 +4,7 @@ import com.bscllc.taxis.service.DatabaseService;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
 import io.smallrye.config.WithDefault;
+import java.util.Optional;
 
 /**
  * Configuration properties for database connection.
@@ -31,8 +32,7 @@ public interface DatabaseConfig {
     boolean useTls();
     
     @WithName("cert-path")
-    @WithDefault("")
-    String certPath();
+    Optional<String> certPath();
     
     @WithName("schema-type")
     @WithDefault("GREEN")

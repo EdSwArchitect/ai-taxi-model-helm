@@ -38,9 +38,9 @@ public class IndexingServiceProducer {
                 builder.credentials(openSearchConfig.username(), openSearchConfig.password());
             }
             
-            if (openSearchConfig.useTls() && openSearchConfig.certPath() != null && 
-                !openSearchConfig.certPath().isEmpty()) {
-                builder.certPath(openSearchConfig.certPath());
+            if (openSearchConfig.useTls() && openSearchConfig.certPath().isPresent() && 
+                !openSearchConfig.certPath().get().isEmpty()) {
+                builder.certPath(openSearchConfig.certPath().get());
             } else if (openSearchConfig.useTls()) {
                 builder.trustAllCerts(true);
             }

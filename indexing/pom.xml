@@ -42,11 +42,6 @@
             <artifactId>common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.bscllc.taxis</groupId>
-            <artifactId>database</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         
         <!-- OpenSearch Client -->
         <dependency>

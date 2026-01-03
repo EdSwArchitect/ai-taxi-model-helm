@@ -4,10 +4,6 @@ global:
   external_labels:
     monitor: 'taxi-monitor'
 
-# Remote write to VictoriaMetrics
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-
 scrape_configs:
   # Prometheus itself
   - job_name: 'prometheus'
@@ -30,7 +26,11 @@ scrape_configs:
   #     - targets: ['opensearch-exporter:9114']
   
   # Taxi Data Processor (Database Application)
+  # Note: This assumes the application is running on the host machine
+  # If running in Docker, use the service name and port instead
   - job_name: 'taxi-data-processor'
+    scrape_interval: 15s
+    scrape_timeout: 10s
     metrics_path: '/metrics'
     static_configs:
       - targets: ['host.docker.internal:8080']
@@ -39,11 +39,14 @@ scrape_configs:
           module: 'database'
   
   # Taxi Data Indexer (Indexing Application)
+  # Note: This assumes the application is running on the host machine
+  # If running in Docker, use the service name and port instead
   - job_name: 'taxi-data-indexer'
+    scrape_interval: 15s
+    scrape_timeout: 10s
     metrics_path: '/metrics'
     static_configs:
       - targets: ['host.docker.internal:8081']
         labels:
           application: 'taxi-data-indexer'
           module: 'indexing'
-

@@ -12,7 +12,8 @@ import java.util.Properties;
 /**
  * Service class for connecting to PostgreSQL and storing trip data.
  * Supports both TLS and non-TLS connections.
- * Table names are based on the schema type (green or yellow).
+ * Creates and manages both green_tripdata and yellow_tripdata tables.
+ * Supports inserting data into both tables regardless of configuration.
  */
 public class DatabaseService {
     
@@ -36,8 +37,8 @@ public class DatabaseService {
     private final int port;
     private final String database;
     private final boolean useTls;
-    private final SchemaType schemaType;
-    private final boolean tableCreated;
+    private final SchemaType schemaType; // Kept for backward compatibility, but not used for validation
+    private final boolean tablesCreated;
     
     /**
      * Builder class for creating DatabaseService instances.
@@ -172,19 +173,19 @@ public class DatabaseService {
         this.connection = createConnection(builder);
         
         if (builder.createTableIfNotExists) {
-            this.tableCreated = createTableIfNotExists();
+            this.tablesCreated = createTablesIfNotExists();
         } else {
-            this.tableCreated = false;
+            this.tablesCreated = false;
         }
     }
     
     /**
-     * Checks if the table was created during initialization.
+     * Checks if the tables were created during initialization.
      *
-     * @return true if table was created, false if it already existed or wasn't created
+     * @return true if at least one table was created, false if they already existed or weren't created
      */
     public boolean wasTableCreated() {
-        return tableCreated;
+        return tablesCreated;
     }
     
     /**
@@ -223,11 +224,23 @@ public class DatabaseService {
     }
     
     /**
-     * Creates the table if it doesn't exist based on the schema type.
+     * Creates both green and yellow tables if they don't exist.
      * 
+     * @return true if at least one table was created, false if both already existed
+     */
+    private boolean createTablesIfNotExists() throws SQLException {
+        boolean greenCreated = createTableIfNotExists(SchemaType.GREEN);
+        boolean yellowCreated = createTableIfNotExists(SchemaType.YELLOW);
+        return greenCreated || yellowCreated;
+    }
+    
+    /**
+     * Creates a table if it doesn't exist based on the schema type.
+     * 
+     * @param schemaType schema type for the table
      * @return true if table was created, false if it already existed
      */
-    private boolean createTableIfNotExists() throws SQLException {
+    private boolean createTableIfNotExists(SchemaType schemaType) throws SQLException {
         String tableName = schemaType.getTableName();
         
         // Check if table already exists
@@ -316,11 +329,7 @@ public class DatabaseService {
      * @throws SQLException if insert fails
      */
     public Long insert(GreenTripdata tripData) throws SQLException {
-        if (schemaType != SchemaType.GREEN) {
-            throw new IllegalStateException("Cannot insert GreenTripdata into " + schemaType.getTableName() + " table");
-        }
-        
-        String sql = "INSERT INTO " + schemaType.getTableName() + " " +
+        String sql = "INSERT INTO " + SchemaType.GREEN.getTableName() + " " +
                 "(vendor_id, lpep_pickup_datetime, lpep_dropoff_datetime, store_and_fwd_flag, " +
                 "ratecode_id, pu_location_id, do_location_id, passenger_count, trip_distance, " +
                 "fare_amount, extra, mta_tax, tip_amount, tolls_amount, ehail_fee, " +
@@ -349,11 +358,7 @@ public class DatabaseService {
      * @throws SQLException if insert fails
      */
     public Long insert(YellowTripdata tripData) throws SQLException {
-        if (schemaType != SchemaType.YELLOW) {
-            throw new IllegalStateException("Cannot insert YellowTripdata into " + schemaType.getTableName() + " table");
-        }
-        
-        String sql = "INSERT INTO " + schemaType.getTableName() + " " +
+        String sql = "INSERT INTO " + SchemaType.YELLOW.getTableName() + " " +
                 "(vendor_id, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count, " +
                 "trip_distance, ratecode_id, store_and_fwd_flag, pu_location_id, do_location_id, " +
                 "payment_type, fare_amount, extra, mta_tax, tip_amount, tolls_amount, " +
@@ -382,11 +387,7 @@ public class DatabaseService {
      * @throws SQLException if batch insert fails
      */
     public int[] batchInsertGreen(List<GreenTripdata> tripDataList) throws SQLException {
-        if (schemaType != SchemaType.GREEN) {
-            throw new IllegalStateException("Cannot insert GreenTripdata into " + schemaType.getTableName() + " table");
-        }
-        
-        String sql = "INSERT INTO " + schemaType.getTableName() + " " +
+        String sql = "INSERT INTO " + SchemaType.GREEN.getTableName() + " " +
                 "(vendor_id, lpep_pickup_datetime, lpep_dropoff_datetime, store_and_fwd_flag, " +
                 "ratecode_id, pu_location_id, do_location_id, passenger_count, trip_distance, " +
                 "fare_amount, extra, mta_tax, tip_amount, tolls_amount, ehail_fee, " +
@@ -410,11 +411,7 @@ public class DatabaseService {
      * @throws SQLException if batch insert fails
      */
     public int[] batchInsertYellow(List<YellowTripdata> tripDataList) throws SQLException {
-        if (schemaType != SchemaType.YELLOW) {
-            throw new IllegalStateException("Cannot insert YellowTripdata into " + schemaType.getTableName() + " table");
-        }
-        
-        String sql = "INSERT INTO " + schemaType.getTableName() + " " +
+        String sql = "INSERT INTO " + SchemaType.YELLOW.getTableName() + " " +
                 "(vendor_id, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count, " +
                 "trip_distance, ratecode_id, store_and_fwd_flag, pu_location_id, do_location_id, " +
                 "payment_type, fare_amount, extra, mta_tax, tip_amount, tolls_amount, " +
@@ -505,12 +502,30 @@ public class DatabaseService {
     }
     
     /**
-     * Gets the table name.
+     * Gets the table name for the configured schema type (for backward compatibility).
      *
-     * @return table name
+     * @return table name for the configured schema type
      */
     public String getTableName() {
         return schemaType.getTableName();
+    }
+    
+    /**
+     * Gets the table name for green trip data.
+     *
+     * @return green table name
+     */
+    public String getGreenTableName() {
+        return SchemaType.GREEN.getTableName();
+    }
+    
+    /**
+     * Gets the table name for yellow trip data.
+     *
+     * @return yellow table name
+     */
+    public String getYellowTableName() {
+        return SchemaType.YELLOW.getTableName();
     }
     
     /**

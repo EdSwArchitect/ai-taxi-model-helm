@@ -4,30 +4,53 @@ import java.time.LocalDateTime;
 
 /**
  * Model class representing green taxi trip data from NYC taxi dataset.
- * Based on the schema from green_tripdata.parquet file.
+ * Generated from the parquet schema of green_tripdata.parquet file.
+ * 
+ * Schema fields (in order):
+ * 1. VendorID (Integer)
+ * 2. lpep_pickup_datetime (LocalDateTime)
+ * 3. lpep_dropoff_datetime (LocalDateTime)
+ * 4. store_and_fwd_flag (String)
+ * 5. RatecodeID (Integer)
+ * 6. PULocationID (Integer)
+ * 7. DOLocationID (Integer)
+ * 8. passenger_count (Integer)
+ * 9. trip_distance (Double)
+ * 10. fare_amount (Double)
+ * 11. extra (Double)
+ * 12. mta_tax (Double)
+ * 13. tip_amount (Double)
+ * 14. tolls_amount (Double)
+ * 15. ehail_fee (Double)
+ * 16. improvement_surcharge (Double)
+ * 17. total_amount (Double)
+ * 18. payment_type (Integer)
+ * 19. trip_type (Integer)
+ * 20. congestion_surcharge (Double)
  */
 public class GreenTripdata {
     
-    private Integer vendorId;
-    private LocalDateTime lpepPickupDatetime;
-    private LocalDateTime lpepDropoffDatetime;
-    private String storeAndFwdFlag;
-    private Integer ratecodeId;
-    private Integer puLocationId;
-    private Integer doLocationId;
-    private Integer passengerCount;
-    private Double tripDistance;
-    private Double fareAmount;
-    private Double extra;
-    private Double mtaTax;
-    private Double tipAmount;
-    private Double tollsAmount;
-    private Double ehailFee;
-    private Double improvementSurcharge;
-    private Double totalAmount;
-    private Integer paymentType;
-    private Integer tripType;
-    private Double congestionSurcharge;
+    // Fields from parquet schema (in order)
+    private Integer vendorId;              // VendorID
+    private LocalDateTime lpepPickupDatetime;      // lpep_pickup_datetime
+    private LocalDateTime lpepDropoffDatetime;     // lpep_dropoff_datetime
+    private String storeAndFwdFlag;        // store_and_fwd_flag
+    private Integer ratecodeId;            // RatecodeID
+    private Integer puLocationId;          // PULocationID
+    private Integer doLocationId;          // DOLocationID
+    private Integer passengerCount;        // passenger_count
+    private Double tripDistance;           // trip_distance
+    private Double fareAmount;             // fare_amount
+    private Double extra;                  // extra
+    private Double mtaTax;                 // mta_tax
+    private Double tipAmount;              // tip_amount
+    private Double tollsAmount;            // tolls_amount
+    private Double ehailFee;               // ehail_fee
+    private Double improvementSurcharge;   // improvement_surcharge
+    private Double totalAmount;            // total_amount
+    private Integer paymentType;           // payment_type
+    private Integer tripType;              // trip_type
+    private Double congestionSurcharge;    // congestion_surcharge
 
     // Getters and Setters
     
@@ -217,4 +240,3 @@ public class GreenTripdata {
                 '}';
     }
 }
-

@@ -36,7 +36,7 @@ ai-taxi-model-helm/
 
 - **common**: Contains model classes (`GreenTripdata`, `YellowTripdata`), utilities (`TripDataParser`, `Monitor`), and shared resources
 - **database**: Quarkus application for processing parquet files and storing data in PostgreSQL (depends on `common`)
-- **indexing**: Quarkus application for processing parquet files and indexing data in OpenSearch with rate limiting (depends on `common` and `database`)
+- **indexing**: Quarkus application for processing parquet files and indexing data in OpenSearch with rate limiting (depends on `common`)
 
 ## Features
 
@@ -87,7 +87,31 @@ mvn test -pl common
 
 ## Quarkus Applications
 
-The project includes two Quarkus applications for automated processing of taxi trip data:
+The project includes two Quarkus applications for automated processing of taxi trip data.
+
+### Prerequisites
+
+Before running the Quarkus applications, ensure:
+
+1. **Infrastructure is running** (PostgreSQL for database app, OpenSearch for indexing app):
+   ```bash
+   docker-compose up -d postgres opensearch
+   ```
+
+2. **Project is built** (install parent POM and all modules):
+   ```bash
+   # Install parent POM and all modules to local repository
+   mvn clean install -DskipTests
+   
+   # Or if you only need to build dependencies for a specific module:
+   mvn clean install -DskipTests -N  # Install parent POM only (-N = non-recursive)
+   mvn clean install -DskipTests -pl common  # Install common module
+   ```
+
+3. **Data directories are created** (create them in your working directory or configure custom paths):
+   ```bash
+   mkdir -p data/{input,output,error}
+   ```
 
 ### Database Application (`database` module)
 
@@ -100,17 +124,49 @@ A Quarkus application that monitors an input directory for parquet files, parses
 - Automatic table creation
 - File management (move to output/error directories)
 - Optional TLS support for PostgreSQL connections
+- Metrics exposed at `/metrics` endpoint (port 8080)
 
 **Run in development mode:**
+
+**Option 1: From project root (recommended - builds dependencies automatically):**
 ```bash
+# From project root - this will build common module first
+mvn quarkus:dev -pl database -am
+```
+
+**Option 2: From database directory (requires parent POM and common to be installed first):**
+```bash
+# First, install parent POM and common module from project root
+cd ..
+mvn clean install -DskipTests -N  # Install parent POM only
+mvn clean install -DskipTests -pl common  # Install common module
+
+# Then run the database application
 cd database
 mvn quarkus:dev
 ```
 
 **Build and run:**
 ```bash
+# Build all dependencies and the application (from project root)
+mvn clean package -DskipTests -pl database -am
+
+# Run the application
+java -jar database/target/quarkus-app/quarkus-run.jar
+```
+
+**Or from database directory:**
+```bash
+# Ensure parent POM and common module are installed first
+cd ..
+mvn clean install -DskipTests -N  # Install parent POM only
+mvn clean install -DskipTests -pl common  # Install common module
+
+# Build the database application
 cd database
-mvn clean package
+mvn clean package -DskipTests
+
+# Run the application
 java -jar target/quarkus-app/quarkus-run.jar
 ```
 
@@ -150,19 +206,143 @@ A Quarkus application that monitors an input directory for parquet files, parses
 - Configurable batch processing
 - File management (move to output/error directories)
 - Optional TLS support for OpenSearch connections
+- Metrics exposed at `/metrics` endpoint (port 8081)
 
 **Run in development mode:**
+
+**Option 1: From project root (recommended - builds dependencies automatically):**
 ```bash
+# From project root - this will build common module first
+mvn quarkus:dev -pl indexing -am
+```
+
+**Option 2: From indexing directory (requires parent POM and common to be installed first):**
+```bash
+# First, install parent POM and common module from project root
+cd ..
+mvn clean install -DskipTests -N  # Install parent POM only
+mvn clean install -DskipTests -pl common  # Install common module
+
+# Then run the indexing application
 cd indexing
 mvn quarkus:dev
 ```
 
 **Build and run:**
 ```bash
+# Build all dependencies and the application (from project root)
+mvn clean package -DskipTests -pl indexing -am
+
+# Run the application
+java -jar indexing/target/quarkus-app/quarkus-run.jar
+```
+
+**Or from indexing directory:**
+```bash
+# Ensure parent POM and common module are installed first
+cd ..
+mvn clean install -DskipTests -N  # Install parent POM only
+mvn clean install -DskipTests -pl common  # Install common module
+
+# Build the indexing application
 cd indexing
-mvn clean package
+mvn clean package -DskipTests
+
+# Run the application
 java -jar target/quarkus-app/quarkus-run.jar
 ```
+
+### Running Both Applications
+
+You can run both applications simultaneously on different ports:
+
+**Option 1: From project root (recommended):**
+
+**Terminal 1 - Database Application:**
+```bash
+# From project root
+mvn quarkus:dev -pl database -am
+```
+
+**Terminal 2 - Indexing Application:**
+```bash
+# From project root
+mvn quarkus:dev -pl indexing -am
+```
+
+**Option 2: From module directories:**
+
+**First, build and install dependencies:**
+```bash
+# From project root - install parent POM and common module
+mvn clean install -DskipTests -N  # Install parent POM only
+mvn clean install -DskipTests -pl common  # Install common module
+```
+
+**Terminal 1 - Database Application:**
+```bash
+cd database
+mvn quarkus:dev
+```
+
+**Terminal 2 - Indexing Application:**
+```bash
+cd indexing
+mvn quarkus:dev
+```
+
+### Quick Start Guide
+
+1. **Start infrastructure services:**
+   ```bash
+   docker-compose up -d postgres opensearch
+   ```
+
+2. **Verify services are running:**
+   ```bash
+   docker-compose ps
+   # PostgreSQL should be accessible at localhost:5432
+   # OpenSearch should be accessible at http://localhost:9200
+   ```
+
+3. **Create data directories:**
+   ```bash
+   mkdir -p data/{input,output,error}
+   ```
+
+4. **Copy sample parquet files to input directory** (optional):
+   ```bash
+   # If you have parquet files, copy them to data/input/
+   cp path/to/your/*.parquet data/input/
+   ```
+
+5. **Start the database application** (from project root):
+   ```bash
+   mvn quarkus:dev -pl database -am
+   ```
+
+6. **Start the indexing application** (in another terminal, from project root):
+   ```bash
+   mvn quarkus:dev -pl indexing -am
+   ```
+
+7. **Verify applications are running:**
+   ```bash
+   # Check database application metrics
+   curl http://localhost:8080/metrics
+   
+   # Check indexing application metrics
+   curl http://localhost:8081/metrics
+   
+   # Check application health (if health extension is enabled)
+   curl http://localhost:8080/q/health
+   curl http://localhost:8081/q/health
+   ```
+
+### Stopping Applications
+
+- **Development mode**: Press `Ctrl+C` in the terminal
+- **JAR file**: Press `Ctrl+C` or send SIGTERM signal
 
 **Configuration** (`indexing/src/main/resources/application.yml`):
 ```yaml
@@ -323,7 +503,7 @@ java -DLOG_DIR=/var/log/taxi -jar database/target/quarkus-app/quarkus-run.jar
 
 ## Metrics and Monitoring
 
-The project includes comprehensive metrics collection using **Micrometer** and visualization with **Grafana** and **VictoriaMetrics**.
+The project includes comprehensive metrics collection using **Micrometer** and visualization with **Prometheus** and **Grafana**.
 
 ### Metrics Collected
 
@@ -338,17 +518,16 @@ Both Quarkus applications expose the following metrics via the `/metrics` endpoi
 ### Architecture
 
 1. **Quarkus Applications** expose metrics at `/metrics` endpoint (Micrometer format)
-2. **Prometheus** scrapes metrics from the applications and writes to VictoriaMetrics
-3. **VictoriaMetrics** stores time series data (12 months retention)
-4. **Grafana** queries VictoriaMetrics and displays dashboards
+2. **Prometheus** scrapes metrics from the applications and stores them locally
+3. **Grafana** queries Prometheus and displays dashboards
 
-### VictoriaMetrics
+### Prometheus
 
-VictoriaMetrics v1.100.0 is configured as the time series database:
-- **Port**: 8428
-- **Retention**: 12 months
-- **Storage**: Persistent volume
-- **API**: Prometheus-compatible
+Prometheus 2.48.0 is configured to scrape and store metrics:
+- **Port**: 9090 (HTTP), 9091 (HTTPS with TLS)
+- **Retention**: 30 days
+- **Storage**: Persistent volume (`prometheus_data`)
+- **Configuration**: `prometheus/prometheus.yml`
 
 ### Grafana Dashboard
 
@@ -375,7 +554,11 @@ A pre-configured dashboard is automatically provisioned: **"Taxi Data Processing
 - `taxi-data-processor` (database application) - port 8080
 - `taxi-data-indexer` (indexing application) - port 8081
 
-**Note**: Update the Prometheus scrape targets in `prometheus/prometheus.yml` if your applications run on different ports or hosts.
+**Note**: 
+- Update the Prometheus scrape targets in `prometheus/prometheus.yml` if your applications run on different ports or hosts
+- The applications must be running on the host machine (not in Docker) for Prometheus to scrape them via `host.docker.internal`
+- On Linux, the `extra_hosts` configuration in `docker-compose.yml` enables `host.docker.internal` to work correctly
+- See [TROUBLESHOOTING-METRICS.md](TROUBLESHOOTING-METRICS.md) for troubleshooting metrics collection issues
 
 ### OpenSearch Indices
 
@@ -424,9 +607,17 @@ View index information via OpenSearch Dashboards:
 
 - **Database Application**: `http://localhost:8080/metrics`
 - **Indexing Application**: `http://localhost:8081/metrics`
-- **VictoriaMetrics**: `http://localhost:8428`
 - **Prometheus**: `http://localhost:9090`
 - **Grafana**: `http://localhost:3000`
+
+### Troubleshooting Metrics
+
+If Prometheus is not able to scrape metrics from your applications, see [TROUBLESHOOTING-METRICS.md](TROUBLESHOOTING-METRICS.md) for common issues and solutions.
+
+Common issues:
+- Applications not running on ports 8080/8081
+- `host.docker.internal` not resolving (Linux systems)
+- Metrics endpoint not accessible from Prometheus container
 
 ## Docker Infrastructure
 
@@ -437,8 +628,7 @@ The project includes a complete Docker Compose setup with the following services
 - **OpenSearch Dashboards 2.11.0** - Search UI (port 5601)
 - **Kafka (Apache)** - Message broker with KRaft (ports 9092, 9094)
 - **etcd 3.5.10** - Distributed key-value store (ports 2379, 2380)
-- **VictoriaMetrics v1.100.0** - Time series database (port 8428)
-- **Prometheus 2.48.0** - Metrics collection (HTTP: 9090, HTTPS: 9091)
+- **Prometheus 2.48.0** - Metrics collection and storage (HTTP: 9090, HTTPS: 9091)
 - **Grafana 10.2.2** - Visualization (HTTP: 3000, HTTPS: 3443)
 - **GeoServer (kartoza)** - Geospatial server (HTTP: 8080, HTTPS: 8443)
 
@@ -466,7 +656,6 @@ docker-compose -f docker-compose.yml -f docker-compose.tls.yml up -d
 - GeoServer: http://localhost:8080/geoserver
 - OpenSearch: http://localhost:9200
 - OpenSearch Dashboards: http://localhost:5601
-- VictoriaMetrics: http://localhost:8428
 
 **With TLS:**
 - Prometheus: https://localhost:9091
