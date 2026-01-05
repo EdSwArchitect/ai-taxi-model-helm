@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "taxi-data-indexer.fullname" . }}-config
+  labels:
+    {{- include "taxi-data-indexer.labels" . | nindent 4 }}
+data:
+  application.yml: |
+    quarkus:
+      application:
+        name: {{ .Values.quarkus.application.name | quote }}
+      
+      # Micrometer Metrics Configuration
+      micrometer:
+        export:
+          prometheus:
+            enabled: {{ .Values.quarkus.micrometer.export.prometheus.enabled }}
+            path: {{ .Values.quarkus.micrometer.export.prometheus.path | quote }}
+        metrics:
+          enabled: {{ .Values.quarkus.micrometer.metrics.enabled }}
+
+    taxis:
+      processing:
+        # Input directory to monitor for parquet files
+        input-directory: {{ .Values.config.processing.inputDirectory | quote }}
+        
+        # Output directory for successfully processed files
+        output-directory: {{ .Values.config.processing.outputDirectory | quote }}
+        
+        # Error directory for files that couldn't be processed
+        error-directory: {{ .Values.config.processing.errorDirectory | quote }}
+        
+        # Time period in milliseconds to monitor the input directory
+        monitor-period-ms: {{ .Values.config.processing.monitorPeriodMs }}
+        
+      indexing:
+        # Rate limiting configuration
+        # Maximum number of documents to index per second
+        rate-limit-per-second: {{ .Values.config.indexing.rateLimitPerSecond }}
+        
+        # Batch size for indexing operations
+        batch-size: {{ .Values.config.indexing.batchSize }}
+        
+      opensearch:
+        host: {{ .Values.config.opensearch.host | quote }}
+        port: {{ .Values.config.opensearch.port }}
+        username: {{ .Values.config.opensearch.username | quote }}
+        password: ${TAXIS_OPENSEARCH_PASSWORD}
+        use-tls: {{ .Values.config.opensearch.useTls }}
+        cert-path: {{ .Values.config.opensearch.certPath | quote }}
+

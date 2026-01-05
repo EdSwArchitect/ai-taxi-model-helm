@@ -38,6 +38,6 @@ services:
       - GEOSERVER_CSRF_DISABLED=false
       - JAVA_OPTS=-Xms512m -Xmx2048m -Djavax.net.ssl.keyStore=/etc/geoserver/certs/localhost.jks -Djavax.net.ssl.keyStorePassword=${KEYSTORE_PASSWORD:-changeit} -Djavax.net.ssl.trustStore=/etc/geoserver/certs/localhost-truststore.jks -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PASSWORD:-changeit}
     ports:
-      - "8080:8080"  # HTTP
-      - "8443:8443"  # HTTPS
+      - "9080:8080"  # HTTP
+      - "9443:8443"  # HTTPS
 

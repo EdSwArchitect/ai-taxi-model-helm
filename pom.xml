@@ -17,6 +17,7 @@
         <module>common</module>
         <module>database</module>
         <module>indexing</module>
+        <module>app</module>
     </modules>
 
     <properties>

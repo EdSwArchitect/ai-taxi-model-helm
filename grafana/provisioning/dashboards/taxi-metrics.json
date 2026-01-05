@@ -236,7 +236,7 @@
             "type": "prometheus",
             "uid": "__expr__"
           },
-          "expr": "sum(rate(taxis_records_indexed_total[5m]))",
+          "expr": "sum(rate(taxis_records_indexed_total{type=\"opensearch\"}[5m])) or vector(0)",
           "refId": "A",
           "legendFormat": "Records/sec"
         }
@@ -322,7 +322,7 @@
             "type": "prometheus",
             "uid": "__expr__"
           },
-          "expr": "sum(rate(taxis_records_inserted_total[5m]))",
+          "expr": "sum(rate(taxis_records_inserted_total{type=\"database\"}[5m])) or vector(0)",
           "refId": "A",
           "legendFormat": "Records/sec"
         }
@@ -629,7 +629,7 @@
             "type": "prometheus",
             "uid": "__expr__"
           },
-          "expr": "sum(taxis_records_indexed_total)",
+          "expr": "sum(taxis_records_indexed_total{type=\"opensearch\"}) or vector(0)",
           "refId": "A",
           "legendFormat": "Records Indexed"
         },
@@ -638,12 +638,582 @@
             "type": "prometheus",
             "uid": "__expr__"
           },
-          "expr": "sum(taxis_records_inserted_total)",
+          "expr": "sum(taxis_records_inserted_total{type=\"database\"}) or vector(0)",
           "refId": "B",
           "legendFormat": "Records Inserted"
         }
       ],
       "title": "Records Indexed vs Inserted (Cumulative)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(rate(taxis_green_files_processed_total{type=\"database\"}[5m])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Green Files/sec"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(rate(taxis_yellow_files_processed_total{type=\"database\"}[5m])) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Yellow Files/sec"
+        }
+      ],
+      "title": "Files Processed Rate by Schema (Green vs Yellow)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(taxis_green_files_processed_total{type=\"database\"}) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Green Files (Total)"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(taxis_yellow_files_processed_total{type=\"database\"}) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Yellow Files (Total)"
+        }
+      ],
+      "title": "Files Processed by Schema (Cumulative)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(rate(taxis_green_records_inserted_total{type=\"database\"}[5m])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Green Records/sec"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(rate(taxis_yellow_records_inserted_total{type=\"database\"}[5m])) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Yellow Records/sec"
+        }
+      ],
+      "title": "Records Inserted Rate by Schema (Green vs Yellow)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(taxis_green_records_inserted_total{type=\"database\"}) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Green Records (Total)"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(taxis_yellow_records_inserted_total{type=\"database\"}) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Yellow Records (Total)"
+        }
+      ],
+      "title": "Records Inserted by Schema (Cumulative)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 56
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(rate(taxis_green_records_indexed_total{type=\"opensearch\"}[5m])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Green Records/sec"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(rate(taxis_yellow_records_indexed_total{type=\"opensearch\"}[5m])) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Yellow Records/sec"
+        }
+      ],
+      "title": "Records Indexed Rate by Schema (Green vs Yellow)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 56
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(taxis_green_records_indexed_total{type=\"opensearch\"}) or vector(0)",
+          "refId": "A",
+          "legendFormat": "Green Records (Total)"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "__expr__"
+          },
+          "expr": "sum(taxis_yellow_records_indexed_total{type=\"opensearch\"}) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Yellow Records (Total)"
+        }
+      ],
+      "title": "Records Indexed by Schema (Cumulative)",
       "type": "timeseries"
     }
   ],

@@ -8,8 +8,15 @@ quarkus:
       prometheus:
         enabled: true
         path: /metrics
+        descriptions: true
     metrics:
       enabled: true
+      # Ensure all metrics are exported, even with zero values
+      binders:
+        jvm:
+          enabled: true
+        system:
+          enabled: true
 
 taxis:
   processing:

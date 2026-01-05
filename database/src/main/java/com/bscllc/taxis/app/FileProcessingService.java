@@ -115,8 +115,10 @@ public class FileProcessingService {
             // Parse and store the data (both green and yellow schemas are supported)
             if (isGreen) {
                 processGreenTripdata(filePath);
+                metricsService.incrementFilesProcessedGreen();
             } else {
                 processYellowTripdata(filePath);
+                metricsService.incrementFilesProcessedYellow();
             }
             
             // Move file to output directory on success
@@ -146,6 +148,7 @@ public class FileProcessingService {
         if (!trips.isEmpty()) {
             databaseService.batchInsertGreen(trips);
             metricsService.incrementRecordsInserted(trips.size());
+            metricsService.incrementRecordsInsertedGreen(trips.size());
             LOG.info("Inserted " + trips.size() + " green trip records into database");
         }
     }
@@ -161,6 +164,7 @@ public class FileProcessingService {
         if (!trips.isEmpty()) {
             databaseService.batchInsertYellow(trips);
             metricsService.incrementRecordsInserted(trips.size());
+            metricsService.incrementRecordsInsertedYellow(trips.size());
             LOG.info("Inserted " + trips.size() + " yellow trip records into database");
         }
     }

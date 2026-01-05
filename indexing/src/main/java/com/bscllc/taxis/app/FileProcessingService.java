@@ -20,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -197,8 +196,10 @@ public class FileProcessingService {
             // Parse and index the data
             if (isGreen) {
                 processGreenTripdata(filePath);
+                metricsService.incrementFilesProcessedGreen();
             } else {
                 processYellowTripdata(filePath);
+                metricsService.incrementFilesProcessedYellow();
             }
             
             // Move file to output directory on success
@@ -241,6 +242,7 @@ public class FileProcessingService {
             try {
                 indexingService.indexGreenTrips(batch);
                 metricsService.incrementRecordsIndexed(batch.size());
+                metricsService.incrementRecordsIndexedGreen(batch.size());
                 LOG.info("Indexed batch of " + batch.size() + " green trip records (total: " + trips.size() + ")");
             } catch (Exception e) {
                 LOG.error("Failed to index batch of green trip records: " + e.getMessage(), e);
@@ -275,6 +277,7 @@ public class FileProcessingService {
             try {
                 indexingService.indexYellowTrips(batch);
                 metricsService.incrementRecordsIndexed(batch.size());
+                metricsService.incrementRecordsIndexedYellow(batch.size());
                 LOG.info("Indexed batch of " + batch.size() + " yellow trip records (total: " + trips.size() + ")");
             } catch (Exception e) {
                 LOG.error("Failed to index batch of yellow trip records: " + e.getMessage(), e);

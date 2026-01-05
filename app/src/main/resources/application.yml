@@ -1,0 +1,62 @@
+quarkus:
+  application:
+    name: taxi-data-processor-indexer
+  
+  # Micrometer Metrics Configuration
+  micrometer:
+    export:
+      prometheus:
+        enabled: true
+        path: /metrics
+        descriptions: true
+    metrics:
+      enabled: true
+      # Ensure all metrics are exported, even with zero values
+      binders:
+        jvm:
+          enabled: true
+        system:
+          enabled: true
+
+taxis:
+  processing:
+    # Input directory to monitor for parquet files
+    input-directory: "./data/input"
+    
+    # Output directory for successfully processed files
+    output-directory: "./data/output"
+    
+    # Error directory for files that couldn't be processed
+    error-directory: "./data/error"
+    
+    # Time period in milliseconds to monitor the input directory
+    monitor-period-ms: 5000
+    
+  database:
+    host: localhost
+    port: 5432
+    database: taxidb
+    username: postgres
+    password: postgres
+    use-tls: false
+    cert-path: ""
+    # schema-type is kept for backward compatibility but both GREEN and YELLOW are now supported
+    schema-type: GREEN
+    create-table-if-not-exists: true
+
+  indexing:
+    # Rate limiting configuration
+    # Maximum number of documents to index per second
+    rate-limit-per-second: 100
+    
+    # Batch size for indexing operations
+    batch-size: 50
+    
+  opensearch:
+    host: localhost
+    port: 9200
+    username: admin
+    password: admin
+    use-tls: false
+    cert-path: ""
+

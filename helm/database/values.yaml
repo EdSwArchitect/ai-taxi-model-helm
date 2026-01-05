@@ -108,8 +108,14 @@ quarkus:
       prometheus:
         enabled: true
         path: /metrics
+        descriptions: true
     metrics:
       enabled: true
+      binders:
+        jvm:
+          enabled: true
+        system:
+          enabled: true
 
 # Liveness and readiness probes
 livenessProbe:

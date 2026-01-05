@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "taxi-data-processor.fullname" . }}-config
+  labels:
+    {{- include "taxi-data-processor.labels" . | nindent 4 }}
+data:
+  application.yml: |
+    quarkus:
+      application:
+        name: {{ .Values.quarkus.application.name | quote }}
+      
+      # Micrometer Metrics Configuration
+      micrometer:
+        export:
+          prometheus:
+            enabled: {{ .Values.quarkus.micrometer.export.prometheus.enabled }}
+            path: {{ .Values.quarkus.micrometer.export.prometheus.path | quote }}
+            {{- if .Values.quarkus.micrometer.export.prometheus.descriptions }}
+            descriptions: {{ .Values.quarkus.micrometer.export.prometheus.descriptions }}
+            {{- end }}
+        metrics:
+          enabled: {{ .Values.quarkus.micrometer.metrics.enabled }}
+          {{- if .Values.quarkus.micrometer.metrics.binders }}
+          binders:
+            {{- if .Values.quarkus.micrometer.metrics.binders.jvm }}
+            jvm:
+              enabled: {{ .Values.quarkus.micrometer.metrics.binders.jvm.enabled }}
+            {{- end }}
+            {{- if .Values.quarkus.micrometer.metrics.binders.system }}
+            system:
+              enabled: {{ .Values.quarkus.micrometer.metrics.binders.system.enabled }}
+            {{- end }}
+          {{- end }}
+
+    taxis:
+      processing:
+        # Input directory to monitor for parquet files
+        input-directory: {{ .Values.config.processing.inputDirectory | quote }}
+        
+        # Output directory for successfully processed files
+        output-directory: {{ .Values.config.processing.outputDirectory | quote }}
+        
+        # Error directory for files that couldn't be processed
+        error-directory: {{ .Values.config.processing.errorDirectory | quote }}
+        
+        # Time period in milliseconds to monitor the input directory
+        monitor-period-ms: {{ .Values.config.processing.monitorPeriodMs }}
+        
+      database:
+        host: {{ .Values.config.database.host | quote }}
+        port: {{ .Values.config.database.port }}
+        database: {{ .Values.config.database.database | quote }}
+        username: {{ .Values.config.database.username | quote }}
+        password: ${TAXIS_DATABASE_PASSWORD}
+        use-tls: {{ .Values.config.database.useTls }}
+        cert-path: {{ .Values.config.database.certPath | quote }}
+        # schema-type is kept for backward compatibility but both GREEN and YELLOW are now supported
+        schema-type: {{ .Values.config.database.schemaType | quote }}
+        create-table-if-not-exists: {{ .Values.config.database.createTableIfNotExists }}
+

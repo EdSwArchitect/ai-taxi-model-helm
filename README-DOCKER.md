@@ -28,7 +28,7 @@ docker-compose -f docker-compose.yml -f docker-compose.tls.yml up -d
 - **VictoriaMetrics v1.100.0**: Time series database (port 8428)
 - **Prometheus 2.48.0**: Metrics collection and scraping (HTTP: 9090, HTTPS: 9091)
 - **Grafana 10.2.2**: Visualization and dashboards (HTTP: 3000, HTTPS: 3443)
-- **GeoServer (kartoza)**: Geospatial server (HTTP: 8080, HTTPS: 8443)
+- **GeoServer (kartoza)**: Geospatial server (HTTP: 9080, HTTPS: 9443)
 
 ## TLS Configuration
 
@@ -89,7 +89,7 @@ docker-compose up -d
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
 - VictoriaMetrics: http://localhost:8428
-- GeoServer: http://localhost:8080/geoserver
+- GeoServer: http://localhost:9080/geoserver
 - OpenSearch: http://localhost:9200
 - OpenSearch Dashboards: http://localhost:5601
 - PostgreSQL: localhost:5432
@@ -99,7 +99,7 @@ docker-compose up -d
 ### With TLS (HTTPS)
 - Prometheus: https://localhost:9091
 - Grafana: https://localhost:3443
-- GeoServer: https://localhost:8443/geoserver
+- GeoServer: https://localhost:9443/geoserver
 
 **Note**: You'll need to accept the self-signed certificate in your browser.
 
@@ -178,7 +178,7 @@ KEYSTORE_PASSWORD=changeit     # Keystore password
 # Optional: Custom ports
 PROMETHEUS_TLS_PORT=9091
 GRAFANA_TLS_PORT=3443
-GEOSERVER_TLS_PORT=8443
+GEOSERVER_TLS_PORT=9443
 ```
 
 ## Service Dependencies

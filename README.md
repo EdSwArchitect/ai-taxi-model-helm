@@ -27,6 +27,7 @@ ai-taxi-model-helm/
 ├── common/          # Common utilities and shared code
 ├── database/         # Database access and persistence layer
 ├── indexing/        # Indexing and search functionality
+├── app/             # Combined application (database + indexing)
 ├── docker-compose.yml
 ├── docker-compose.tls.yml
 └── generate-tls-cert.sh
@@ -37,13 +38,14 @@ ai-taxi-model-helm/
 - **common**: Contains model classes (`GreenTripdata`, `YellowTripdata`), utilities (`TripDataParser`, `Monitor`), and shared resources
 - **database**: Quarkus application for processing parquet files and storing data in PostgreSQL (depends on `common`)
 - **indexing**: Quarkus application for processing parquet files and indexing data in OpenSearch with rate limiting (depends on `common`)
+- **app**: Combined Quarkus application that processes parquet files for both database storage and OpenSearch indexing simultaneously (depends on `common`, `database`, and `indexing`)
 
 ## Features
 
 - ✅ Multi-module Maven project structure
 - ✅ NYC taxi trip data models (Green and Yellow)
 - ✅ Parquet file parser with schema validation
-- ✅ Quarkus applications for automated file processing
+- ✅ Quarkus applications for automated file processing (separate or combined)
 - ✅ PostgreSQL integration with optional TLS
 - ✅ OpenSearch integration with optional TLS and rate limiting
 - ✅ Separate OpenSearch indices for green and yellow trip data
@@ -87,7 +89,11 @@ mvn test -pl common
 
 ## Quarkus Applications
 
-The project includes two Quarkus applications for automated processing of taxi trip data.
+The project includes three Quarkus applications for automated processing of taxi trip data:
+
+1. **Database Application** (`database` module) - Stores data in PostgreSQL
+2. **Indexing Application** (`indexing` module) - Indexes data in OpenSearch
+3. **Combined Application** (`app` module) - Performs both database storage and indexing simultaneously
 
 ### Prerequisites
 
@@ -316,25 +322,32 @@ mvn quarkus:dev
    cp path/to/your/*.parquet data/input/
    ```
 
-5. **Start the database application** (from project root):
+5. **Choose one of the following options:**
+
+   **Option A: Run the combined application (recommended):**
    ```bash
-   mvn quarkus:dev -pl database -am
+   # From project root - runs both database and indexing operations
+   mvn quarkus:dev -pl app -am
    ```
 
-6. **Start the indexing application** (in another terminal, from project root):
+   **Option B: Run database and indexing applications separately:**
    ```bash
+   # Terminal 1 - Database application (from project root)
+   mvn quarkus:dev -pl database -am
+   
+   # Terminal 2 - Indexing application (from project root)
    mvn quarkus:dev -pl indexing -am
    ```
 
-7. **Verify applications are running:**
+6. **Verify applications are running:**
    ```bash
-   # Check database application metrics
+   # Combined application (if using Option A)
    curl http://localhost:8080/metrics
+   curl http://localhost:8080/q/health
    
-   # Check indexing application metrics
-   curl http://localhost:8081/metrics
-   
-   # Check application health (if health extension is enabled)
+   # Separate applications (if using Option B)
+   curl http://localhost:8080/metrics  # Database application
+   curl http://localhost:8081/metrics  # Indexing application
    curl http://localhost:8080/q/health
    curl http://localhost:8081/q/health
    ```
@@ -474,7 +487,7 @@ The project uses **SLF4J** with **Logback** as the logging implementation.
 
 ### Logback Configuration
 
-Both Quarkus applications include Logback configuration files:
+All Quarkus applications include Logback configuration files:
 - `database/src/main/resources/logback.xml`
 - `indexing/src/main/resources/logback.xml`
 
@@ -507,13 +520,31 @@ The project includes comprehensive metrics collection using **Micrometer** and v
 
 ### Metrics Collected
 
-Both Quarkus applications expose the following metrics via the `/metrics` endpoint:
+All Quarkus applications expose metrics via the `/metrics` endpoint:
 
-- **`taxis_files_processed_total`** - Total number of files processed successfully
-- **`taxis_files_errored_total`** - Total number of files that failed to process
-- **`taxis_records_indexed_total`** - Total number of records indexed into OpenSearch (indexing module)
-- **`taxis_records_inserted_total`** - Total number of records inserted into the database (database module)
-- **`taxis_tables_created_total`** - Total number of database tables created (database module)
+**Database Application (`database` module):**
+- **`taxis_files_processed_total{type="database"}`** - Total number of files processed successfully
+- **`taxis_files_errored_total{type="database"}`** - Total number of files that failed to process
+- **`taxis_records_inserted_total{type="database"}`** - Total number of records inserted into the database
+- **`taxis_green_records_inserted_total{type="database"}`** - Green schema records inserted
+- **`taxis_yellow_records_inserted_total{type="database"}`** - Yellow schema records inserted
+- **`taxis_green_files_processed_total{type="database"}`** - Green schema files processed
+- **`taxis_yellow_files_processed_total{type="database"}`** - Yellow schema files processed
+- **`taxis_tables_created_total`** - Total number of database tables created
+
+**Indexing Application (`indexing` module):**
+- **`taxis_files_processed_total{type="opensearch"}`** - Total number of files processed successfully
+- **`taxis_files_errored_total{type="opensearch"}`** - Total number of files that failed to process
+- **`taxis_records_indexed_total{type="opensearch"}`** - Total number of records indexed into OpenSearch
+- **`taxis_green_records_indexed_total{type="opensearch"}`** - Green schema records indexed
+- **`taxis_yellow_records_indexed_total{type="opensearch"}`** - Yellow schema records indexed
+- **`taxis_green_files_processed_total{type="opensearch"}`** - Green schema files processed
+- **`taxis_yellow_files_processed_total{type="opensearch"}`** - Yellow schema files processed
+
+**Combined Application (`app` module):**
+- Exposes all metrics from both database and indexing operations
+- Metrics are tracked separately for database and indexing operations
+- Uses the same metric names as the individual modules with `type="database"` and `type="opensearch"` tags
 
 ### Architecture
 
@@ -553,9 +584,11 @@ A pre-configured dashboard is automatically provisioned: **"Taxi Data Processing
 **Prometheus** is configured to scrape metrics from:
 - `taxi-data-processor` (database application) - port 8080
 - `taxi-data-indexer` (indexing application) - port 8081
+- `taxi-data-processor-indexer` (combined application) - port 8080 (default)
 
 **Note**: 
 - Update the Prometheus scrape targets in `prometheus/prometheus.yml` if your applications run on different ports or hosts
+- If using the combined application, you only need to configure one scrape target instead of two
 - The applications must be running on the host machine (not in Docker) for Prometheus to scrape them via `host.docker.internal`
 - On Linux, the `extra_hosts` configuration in `docker-compose.yml` enables `host.docker.internal` to work correctly
 - See [TROUBLESHOOTING-METRICS.md](TROUBLESHOOTING-METRICS.md) for troubleshooting metrics collection issues
@@ -607,6 +640,7 @@ View index information via OpenSearch Dashboards:
 
 - **Database Application**: `http://localhost:8080/metrics`
 - **Indexing Application**: `http://localhost:8081/metrics`
+- **Combined Application**: `http://localhost:8080/metrics` (default port)
 - **Prometheus**: `http://localhost:9090`
 - **Grafana**: `http://localhost:3000`
 
@@ -630,7 +664,7 @@ The project includes a complete Docker Compose setup with the following services
 - **etcd 3.5.10** - Distributed key-value store (ports 2379, 2380)
 - **Prometheus 2.48.0** - Metrics collection and storage (HTTP: 9090, HTTPS: 9091)
 - **Grafana 10.2.2** - Visualization (HTTP: 3000, HTTPS: 3443)
-- **GeoServer (kartoza)** - Geospatial server (HTTP: 8080, HTTPS: 8443)
+- **GeoServer (kartoza)** - Geospatial server (HTTP: 9080, HTTPS: 9443)
 
 ### Quick Start
 
@@ -653,14 +687,14 @@ docker-compose -f docker-compose.yml -f docker-compose.tls.yml up -d
 **Without TLS:**
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
-- GeoServer: http://localhost:8080/geoserver
+- GeoServer: http://localhost:9080/geoserver
 - OpenSearch: http://localhost:9200
 - OpenSearch Dashboards: http://localhost:5601
 
 **With TLS:**
 - Prometheus: https://localhost:9091
 - Grafana: https://localhost:3443
-- GeoServer: https://localhost:8443/geoserver
+- GeoServer: https://localhost:9443/geoserver
 
 **Default Credentials:**
 - Grafana: admin/admin
@@ -797,6 +831,18 @@ if (TripDataParser.isGreenTripdataFile(tripFile)) {
 - Jackson Databind 2.15.2
 - SLF4J API 2.0.9
 - Logback Classic 1.4.14
+
+### Combined Application Module (app)
+
+- Quarkus 3.6.0 (quarkus-arc, quarkus-config-yaml, quarkus-core)
+- Quarkus Micrometer Registry Prometheus
+- PostgreSQL JDBC Driver 42.7.1
+- OpenSearch Java Client 2.11.0
+- Apache HttpComponents Client 4.5.14
+- Jackson Databind 2.15.2
+- SLF4J API 2.0.9
+- Logback Classic 1.4.14
+- Depends on `common`, `database`, and `indexing` modules
 
 ## Project Information
 

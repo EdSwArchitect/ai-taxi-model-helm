@@ -28,10 +28,10 @@ taxis:
   indexing:
     # Rate limiting configuration
     # Maximum number of documents to index per second
-    rate-limit-per-second: 100
+    rate-limit-per-second: 1000
     
     # Batch size for indexing operations
-    batch-size: 50
+    batch-size: 500
     
   opensearch:
     host: localhost

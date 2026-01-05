@@ -225,8 +225,8 @@ services:
       - GEOSERVER_ADMIN_PASSWORD=geoserver
       - JAVA_OPTS=${GEOSERVER_JAVA_OPTS:--Xms512m -Xmx2048m}
     ports:
-      - "${GEOSERVER_PORT:-8080}:8080"
-      - "${GEOSERVER_TLS_PORT:-8443}:8443"
+      - "${GEOSERVER_PORT:-9080}:8080"
+      - "${GEOSERVER_TLS_PORT:-9443}:8443"
     volumes:
       - geoserver_data:/var/local/geoserver
       - ${CERT_DIR:-./certs}:/etc/geoserver/certs:ro
